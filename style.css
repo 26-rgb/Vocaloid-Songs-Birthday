@@ -320,21 +320,56 @@ select:focus {
   transform: translateY(-3px);
 }
 
+.card-thumb-link {
+  display: block;
+  text-decoration: none;
+}
+
 .card-embed {
   width: 100%;
-  background: #000;
+  background: #111;
   position: relative;
   padding-top: 56.25%; /* 16:9 */
   overflow: hidden;
 }
 
-.card-embed iframe {
+.card-embed img {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
   border: none;
+  transition: opacity 0.2s;
+}
+
+.card-thumb-link:hover .card-embed img {
+  opacity: 0.82;
+}
+
+.card-play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  background: rgba(0, 0, 0, 0.62);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.2rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  padding-left: 4px; /* ▶の視覚的センタリング補正 */
+}
+
+.card-thumb-link:hover .card-play-icon {
+  opacity: 1;
 }
 
 .card-info {

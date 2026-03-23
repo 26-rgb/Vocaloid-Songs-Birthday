@@ -10,16 +10,25 @@ document.addEventListener('DOMContentLoaded', function() {
   // ハンバーガーメニュー
   var hamburger = document.getElementById('hamburger');
   var nav = document.getElementById('nav');
-  hamburger.addEventListener('click', function() {
+
+  hamburger.addEventListener('click', function(e) {
+    e.stopPropagation(); // ★修正：クリックがdocumentに伝播してすぐ閉じるのを防ぐ
     nav.classList.toggle('active');
   });
   hamburger.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.key === ' ') nav.classList.toggle('active');
-  });
-  document.addEventListener('click', function(e) {
-    if (!hamburger.contains(e.target) && !nav.contains(e.target)) {
-      nav.classList.remove('active');
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.stopPropagation();
+      nav.classList.toggle('active');
     }
+  });
+
+  // ★修正：navの内側クリックでも伝播を止める（リンクをクリックしても即閉じない）
+  nav.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+
+  document.addEventListener('click', function() {
+    nav.classList.remove('active');
   });
 
   // 今日の日付をセット
@@ -202,15 +211,32 @@ function vocaloidbirthday(m, d) {
       var song = group[n];
       var card = document.createElement('div');
       card.className = 'song-card';
+
+      // ★修正：iframeの代わりにサムネイル画像＋リンクを使用
+      // ext.nicovideo.jp のiframeはPCのChrome/FirefoxでX-Frame-Optionsによりブロックされる
+      // ニコニコのサムネイルURLは https://nicovideo.cdn.nimg.jp/thumbnails/{数字}/{数字} だが
+      // 動画IDから直接取れる公式URLは存在しないため、
+      // i.nicovideo.jp/nicovideo/thumb/{smId} を使用する
+      var thumbUrl = 'https://nicovideo.cdn.nimg.jp/thumbnails/' +
+        smIdToNum(song.smId) + '/' + smIdToNum(song.smId);
+      var watchUrl = 'https://www.nicovideo.jp/watch/' + escapeHtml(song.smId);
+
       card.innerHTML =
-        '<div class="card-embed">' +
-          '<iframe src="https://ext.nicovideo.jp/thumb/' + escapeHtml(song.smId) + '"' +
-          ' scrolling="no" frameborder="0" loading="lazy"' +
-          ' title="' + escapeHtml(song.title) + '"></iframe>' +
-        '</div>' +
+        '<a class="card-thumb-link" href="' + watchUrl + '" target="_blank" rel="noopener"' +
+        ' aria-label="' + escapeHtml(song.title) + ' をニコニコで見る">' +
+          '<div class="card-embed">' +
+            '<img' +
+            ' src="https://nicovideo.cdn.nimg.jp/thumbnails/' + escapeHtml(smIdToNum(song.smId)) + '/' + escapeHtml(smIdToNum(song.smId)) + '"' +
+            ' alt="' + escapeHtml(song.title) + '"' +
+            ' loading="lazy"' +
+            ' onerror="this.onerror=null;this.src=\'https://nicovideo.cdn.nimg.jp/thumbnails/' + escapeHtml(smIdToNum(song.smId)) + '/' + escapeHtml(smIdToNum(song.smId)) + '.M\'"' +
+            '>' +
+            '<div class="card-play-icon" aria-hidden="true">▶</div>' +
+          '</div>' +
+        '</a>' +
         '<div class="card-info">' +
           '<p class="card-title">' + escapeHtml(song.title) + '</p>' +
-          '<a class="card-link" href="https://www.nicovideo.jp/watch/' + escapeHtml(song.smId) + '"' +
+          '<a class="card-link" href="' + watchUrl + '"' +
           ' target="_blank" rel="noopener">ニコニコで見る →</a>' +
         '</div>';
       grid.appendChild(card);
@@ -219,6 +245,11 @@ function vocaloidbirthday(m, d) {
     section.appendChild(grid);
     songListEl.appendChild(section);
   }
+}
+
+// ========== smId（"sm12345"）から数字部分を取り出す ==========
+function smIdToNum(smId) {
+  return String(smId).replace(/^[a-z]+/i, '');
 }
 
 // ========== XSS対策 ==========
