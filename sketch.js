@@ -1,53 +1,118 @@
-// ボカロ曲の誕生日 — n年前の今日生まれたボカロ曲（30万再生以上）を表示
-// p5.js の loadTable を使いつつ、DOM描画はネイティブJSで行う
+// ボカロ曲の誕生日 — 純粋なバニラJS実装（p5.js不要）
 
-let table = null;
-let currentMonth = null;
-let currentDay = null;
+var csvData = null;
+var currentMonth = null;
+var currentDay = null;
 
-// p5.js の preload でCSVを読み込む
-function preload() {
-  table = loadTable('vocaloid_data.csv', 'csv');
-}
+// ========== 初期化 ==========
+document.addEventListener('DOMContentLoaded', function() {
 
-function setup() {
-  noCanvas(); // p5.js の Canvas は不要
+  // ハンバーガーメニュー
+  var hamburger = document.getElementById('hamburger');
+  var nav = document.getElementById('nav');
+  hamburger.addEventListener('click', function() {
+    nav.classList.toggle('active');
+  });
+  hamburger.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') nav.classList.toggle('active');
+  });
+  document.addEventListener('click', function(e) {
+    if (!hamburger.contains(e.target) && !nav.contains(e.target)) {
+      nav.classList.remove('active');
+    }
+  });
 
   // 今日の日付をセット
-  const today = new Date();
+  var today = new Date();
   currentMonth = today.getMonth() + 1;
   currentDay = today.getDate();
-
-  // セレクトボックスの初期値を今日にセット
   setSelectValue('selectMonth', currentMonth);
   setSelectValue('selectDay', currentDay);
 
-  // 初回表示
-  vocaloidbirthday(currentMonth, currentDay);
-
   // セレクトボックスのイベント
-  document.getElementById('selectMonth').addEventListener('change', function () {
+  document.getElementById('selectMonth').addEventListener('change', function() {
     currentMonth = parseInt(this.value) || null;
-    vocaloidbirthday(currentMonth, currentDay);
+    if (csvData) vocaloidbirthday(currentMonth, currentDay);
   });
-  document.getElementById('selectDay').addEventListener('change', function () {
+  document.getElementById('selectDay').addEventListener('change', function() {
     currentDay = parseInt(this.value) || null;
-    vocaloidbirthday(currentMonth, currentDay);
+    if (csvData) vocaloidbirthday(currentMonth, currentDay);
   });
 
-  // ハンバーガーメニュー
-  const hamburger = document.getElementById('hamburger');
-  const nav = document.getElementById('nav');
-  hamburger.addEventListener('click', () => nav.classList.toggle('active'));
-  hamburger.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') nav.classList.toggle('active');
-  });
+  // CSVを読み込む
+  loadCSV('vocaloid_data.csv');
+});
+
+// ========== CSV読み込み ==========
+function loadCSV(path) {
+  showLoading(true);
+  fetch(path)
+    .then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.text();
+    })
+    .then(function(text) {
+      csvData = parseCSV(text);
+      vocaloidbirthday(currentMonth, currentDay);
+    })
+    .catch(function(err) {
+      showLoading(false);
+      document.getElementById('date-heading').textContent = 'CSVの読み込みに失敗しました。';
+      console.error('CSV load error:', err);
+    });
 }
 
-// セレクトボックスに値をセット
+// ========== RFC4180準拠CSVパーサー（タイトル内カンマ対応）==========
+function parseCSV(text) {
+  // BOM除去・改行統一
+  text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  var rows = [];
+  var lines = text.split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (line.trim() === '') continue;
+    var cols = splitCSVLine(line);
+    rows.push(cols);
+  }
+  return rows;
+}
+
+// 1行をカンマで分割（ダブルクォート内カンマを正しく処理）
+function splitCSVLine(line) {
+  var cols = [];
+  var current = '';
+  var inQuote = false;
+  for (var i = 0; i < line.length; i++) {
+    var ch = line[i];
+    if (inQuote) {
+      if (ch === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"'; i++; // エスケープされたクォート
+        } else {
+          inQuote = false;
+        }
+      } else {
+        current += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuote = true;
+      } else if (ch === ',') {
+        cols.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+  }
+  cols.push(current.trim());
+  return cols;
+}
+
+// ========== セレクトボックスに値をセット ==========
 function setSelectValue(id, value) {
-  const sel = document.getElementById(id);
-  for (let i = 0; i < sel.options.length; i++) {
+  var sel = document.getElementById(id);
+  for (var i = 0; i < sel.options.length; i++) {
     if (parseInt(sel.options[i].value) === value) {
       sel.selectedIndex = i;
       break;
@@ -55,111 +120,110 @@ function setSelectValue(id, value) {
   }
 }
 
-// m月d日が誕生日の曲を表示
-function vocaloidbirthday(m, d) {
-  if (!m || !d || !table) return;
-
-  const songListEl = document.getElementById('song-list');
-  const headingEl  = document.getElementById('date-heading');
-  const noResults  = document.getElementById('no-results');
-  const loading    = document.getElementById('loading');
-
-  // 前の結果をクリア
-  songListEl.innerHTML = '';
-  noResults.style.display = 'none';
-  loading.style.display = 'flex';
-
-  // 非同期っぽく見せるために少し遅延
-  setTimeout(() => {
-    const rowCount = table.getRowCount();
-    const songs = [];
-
-    for (let i = 0; i < rowCount; i++) {
-      const dateStr = table.getString(i, 3).trim(); // 例: 2011-09-17T19:00:28+09:00
-      const title   = table.getString(i, 0).trim();
-      const smId    = table.getString(i, 1).trim();
-
-      // 日付パース: "YYYY-MM-DD" 部分だけ見る
-      const datePart = dateStr.substring(0, 10); // "2011-09-17"
-      const rowMonth = parseInt(datePart.substring(5, 7));
-      const rowDay   = parseInt(datePart.substring(8, 10));
-      const rowYear  = parseInt(datePart.substring(0, 4));
-
-      if (rowMonth !== m || rowDay !== d) continue;
-
-      // ニコカラを除外
-      if (title.includes('ニコカラ')) continue;
-
-      songs.push({ title, smId, year: rowYear, dateStr: datePart });
-    }
-
-    loading.style.display = 'none';
-
-    // 見出しを更新
-    const today = new Date();
-    const thisYear = today.getFullYear();
-    headingEl.innerHTML = `<span class="date-text">${m}月${d}日</span>に生まれたボカロ曲 <span class="count-badge">${songs.length}件</span>`;
-
-    if (songs.length === 0) {
-      noResults.style.display = 'flex';
-      return;
-    }
-
-    // 年ごとにグループ化してソート（新しい年順）
-    const byYear = {};
-    songs.forEach(s => {
-      if (!byYear[s.year]) byYear[s.year] = [];
-      byYear[s.year].push(s);
-    });
-    const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
-
-    years.forEach(year => {
-      const yearsAgo = thisYear - year;
-      const section = document.createElement('section');
-      section.className = 'year-section';
-
-      const yearHead = document.createElement('h2');
-      yearHead.className = 'year-heading';
-      yearHead.innerHTML = `<span class="year-num">${year}年</span><span class="years-ago">${yearsAgo}年前</span>`;
-      section.appendChild(yearHead);
-
-      const grid = document.createElement('div');
-      grid.className = 'songs-grid';
-
-      byYear[year].forEach(song => {
-        const card = document.createElement('div');
-        card.className = 'song-card';
-
-        card.innerHTML = `
-          <div class="card-embed">
-            <iframe
-              src="https://ext.nicovideo.jp/thumb/${song.smId}"
-              scrolling="no"
-              frameborder="0"
-              allowfullscreen
-              loading="lazy"
-              title="${escapeHtml(song.title)}"
-            ></iframe>
-          </div>
-          <div class="card-info">
-            <p class="card-title">${escapeHtml(song.title)}</p>
-            <a class="card-link" href="https://www.nicovideo.jp/watch/${song.smId}" target="_blank" rel="noopener">
-              ニコニコで見る →
-            </a>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-
-      section.appendChild(grid);
-      songListEl.appendChild(section);
-    });
-  }, 50);
+// ========== ローディング表示切り替え ==========
+function showLoading(show) {
+  document.getElementById('loading').style.display = show ? 'flex' : 'none';
 }
 
-// XSS対策
+// ========== m月d日が誕生日の曲を表示 ==========
+function vocaloidbirthday(m, d) {
+  if (!m || !d || !csvData) return;
+
+  var songListEl = document.getElementById('song-list');
+  var headingEl  = document.getElementById('date-heading');
+  var noResults  = document.getElementById('no-results');
+
+  songListEl.innerHTML = '';
+  noResults.style.display = 'none';
+  showLoading(true);
+
+  var songs = [];
+  for (var i = 0; i < csvData.length; i++) {
+    var row = csvData[i];
+    if (row.length < 4) continue;
+
+    var title   = row[0];
+    var smId    = row[1];
+    var dateStr = row[3]; // "2011-09-17T19:00:28+09:00"
+
+    if (!dateStr || dateStr.length < 10) continue;
+
+    var rowMonth = parseInt(dateStr.substring(5, 7));
+    var rowDay   = parseInt(dateStr.substring(8, 10));
+    var rowYear  = parseInt(dateStr.substring(0, 4));
+
+    if (isNaN(rowMonth) || isNaN(rowDay) || isNaN(rowYear)) continue;
+    if (rowMonth !== m || rowDay !== d) continue;
+    if (title.indexOf('ニコカラ') !== -1) continue;
+
+    songs.push({ title: title, smId: smId, year: rowYear });
+  }
+
+  showLoading(false);
+
+  var thisYear = new Date().getFullYear();
+  headingEl.innerHTML =
+    '<span class="date-text">' + m + '月' + d + '日</span>に生まれたボカロ曲' +
+    '<span class="count-badge">' + songs.length + '件</span>';
+
+  if (songs.length === 0) {
+    noResults.style.display = 'flex';
+    return;
+  }
+
+  // 年ごとにグループ化・降順ソート
+  var byYear = {};
+  for (var j = 0; j < songs.length; j++) {
+    var y = songs[j].year;
+    if (!byYear[y]) byYear[y] = [];
+    byYear[y].push(songs[j]);
+  }
+  var years = Object.keys(byYear).map(Number).sort(function(a, b) { return b - a; });
+
+  for (var k = 0; k < years.length; k++) {
+    var year = years[k];
+    var yearsAgo = thisYear - year;
+
+    var section = document.createElement('section');
+    section.className = 'year-section';
+
+    var yearHead = document.createElement('h2');
+    yearHead.className = 'year-heading';
+    yearHead.innerHTML =
+      '<span class="year-num">' + year + '年</span>' +
+      '<span class="years-ago">' + yearsAgo + '年前</span>';
+    section.appendChild(yearHead);
+
+    var grid = document.createElement('div');
+    grid.className = 'songs-grid';
+
+    var group = byYear[year];
+    for (var n = 0; n < group.length; n++) {
+      var song = group[n];
+      var card = document.createElement('div');
+      card.className = 'song-card';
+      card.innerHTML =
+        '<div class="card-embed">' +
+          '<iframe src="https://ext.nicovideo.jp/thumb/' + escapeHtml(song.smId) + '"' +
+          ' scrolling="no" frameborder="0" loading="lazy"' +
+          ' title="' + escapeHtml(song.title) + '"></iframe>' +
+        '</div>' +
+        '<div class="card-info">' +
+          '<p class="card-title">' + escapeHtml(song.title) + '</p>' +
+          '<a class="card-link" href="https://www.nicovideo.jp/watch/' + escapeHtml(song.smId) + '"' +
+          ' target="_blank" rel="noopener">ニコニコで見る →</a>' +
+        '</div>';
+      grid.appendChild(card);
+    }
+
+    section.appendChild(grid);
+    songListEl.appendChild(section);
+  }
+}
+
+// ========== XSS対策 ==========
 function escapeHtml(str) {
-  return str
+  return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
