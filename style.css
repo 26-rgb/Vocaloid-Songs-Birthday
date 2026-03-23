@@ -1,0 +1,69 @@
+html, body {
+  margin: 0;
+  padding: 0;
+}
+canvas {
+  display: block;
+  background-color: rgb(245,245,245);
+}
+header {
+    width: 100%; /* 幅いっぱいを指定 */
+    height: 50px; /* 高さを50pxに指定 */
+    background: #f4f4f4; /* 背景色にグレーを指定 */
+    padding: 20px 30px; /* ヘッダーに上下左右それぞれ余白を指定 */
+    box-sizing: border-box; /* padding分を含んで幅を100%にするため */
+    position: fixed; /* ウィンドウを基準に画面に固定 */
+    top: 0; /* 上下の固定位置を上から0pxにする */
+    left: 0; /* 左右の固定位置を左から0pxにする */
+    display: flex; /* 中の要素を横並びにする */
+    align-items: center; /* 中の要素を上下中央に並べる */
+    border-width:0px 0px 3px 0px;
+    border-style:solid;
+    border-color:#d4d4d4;
+}
+.hamburger {
+  width: 30px;
+  height: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 10px;
+  margin: 10px;
+  position: absolute;
+  top: -5px;
+  right: 0px;
+  z-index: 1000;
+}
+
+.hamburger span {
+  display: block;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+}
+
+/* ナビゲーションの初期状態 */
+.nav {
+  display: none;
+  position: absolute;  /* 位置を絶対指定 */
+  top: 50px;            /* ハンバーガーの下に表示（調整可） */
+  right: 0;             /* 右端に固定 */
+  background: #f0f0f0;
+  width: 230px;         /* メニューの幅 */
+  padding: 10px;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1); /* 影をつけて浮かせる */
+}
+
+.nav.active {
+  display: block;
+}
+
+.nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+.nav li {
+  margin: 10px 0;
+}
