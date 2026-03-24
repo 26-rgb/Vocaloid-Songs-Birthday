@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>iframe 表示診断</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+  h2 { margin-top: 30px; border-bottom: 2px solid #00b4a6; padding-bottom: 6px; }
+  .result { padding: 10px 14px; border-radius: 6px; margin: 8px 0; font-size: 0.9rem; }
+  .ok  { background: #e0f7f5; color: #006b5e; }
+  .ng  { background: #ffe0e0; color: #a00; }
+  .info{ background: #e8eaf6; color: #333; }
+  .box { background: #fff; border: 1px solid #ddd; border-radius: 8px;
+         padding: 16px; margin: 16px 0; }
+  iframe { display: block; border: 2px solid #00b4a6; }
+  button { margin: 6px 4px; padding: 8px 16px; background: #00b4a6;
+           color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+  button:hover { background: #008f84; }
+  pre { background: #222; color: #0f0; padding: 12px; border-radius: 6px;
+        overflow-x: auto; font-size: 0.8rem; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>🔍 ext.nicovideo.jp/thumb — PC 表示診断</h1>
+<p>このページをPCのブラウザで開いて、各テストの結果を確認してください。</p>
+
+<!-- ===== テスト1: iframeが読み込まれるか ===== -->
+<h2>テスト1：iframeの読み込み確認</h2>
+<div class="box">
+  <p>以下のiframeが正常に表示されれば ✅、灰色の空白や「接続できませんでした」と表示されれば ❌ です。</p>
+  <p>動画: 千本桜 (sm15630734)</p>
+  <div id="test1-result" class="result info">読み込み中...</div>
+  <iframe id="iframe1"
+    src="https://ext.nicovideo.jp/thumb/sm15630734"
+    width="312" height="176" scrolling="no" frameborder="0"
+    onload="onIframeLoad('iframe1','test1-result')"
+    onerror="onIframeError('iframe1','test1-result')">
+  </iframe>
+</div>
+
+<!-- ===== テスト2: 横幅フルでscaleしたiframe ===== -->
+<h2>テスト2：レスポンシブscale表示</h2>
+<div class="box">
+  <p>コンテナ幅に合わせてiframeをscaleした場合の表示確認です。</p>
+  <div id="test2-container" style="width:100%; position:relative; overflow:hidden; background:#000;">
+    <iframe id="iframe2"
+      src="https://ext.nicovideo.jp/thumb/sm15630734"
+      width="312" height="176" scrolling="no" frameborder="0"
+      style="display:block; transform-origin:top left;"
+      onload="onIframeLoad('iframe2','test2-result')">
+    </iframe>
+  </div>
+  <div id="test2-result" class="result info">スケール計算中...</div>
+  <div id="test2-info" class="result info"></div>
+</div>
+
+<!-- ===== テスト3: 2019年以降の動画 ===== -->
+<h2>テスト3：2019年以降の動画のiframe</h2>
+<div class="box">
+  <p>動画: sm34406342 (2019年投稿)</p>
+  <div id="test3-result" class="result info">読み込み中...</div>
+  <iframe id="iframe3"
+    src="https://ext.nicovideo.jp/thumb/sm34406342"
+    width="312" height="176" scrolling="no" frameborder="0"
+    onload="onIframeLoad('iframe3','test3-result')"
+    onerror="onIframeError('iframe3','test3-result')">
+  </iframe>
+</div>
+
+<!-- ===== テスト4: コンソールログ ===== -->
+<h2>テスト4：環境情報</h2>
+<div class="box">
+  <div id="env-info"></div>
+  <button onclick="checkHeaders()">レスポンスヘッダーを確認（fetchで試行）</button>
+  <pre id="header-result" style="display:none;"></pre>
+</div>
+
+<!-- ===== テスト5: CSPブロック確認 ===== -->
+<h2>テスト5：CSP / X-Frame-Options ブロック確認</h2>
+<div class="box">
+  <p>ブラウザのコンソール（F12 → Console）を開いて、赤いエラーが出ていないか確認してください。</p>
+  <p>以下のようなエラーが出ていれば、iframeがブロックされています：</p>
+  <pre>Refused to display 'https://ext.nicovideo.jp/...' in a frame
+because it set 'X-Frame-Options' to 'sameorigin'.</pre>
+  <p>または：</p>
+  <pre>Refused to frame 'https://ext.nicovideo.jp/...' because an
+ancestor violates the following Content Security Policy directive: "frame-ancestors ..."</pre>
+  <div id="test5-result" class="result info">コンソールを確認してください（F12キー）</div>
+  <button onclick="checkConsoleErrors()">診断を実行</button>
+</div>
+
+<script>
+// ===== iframeロードイベント =====
+function onIframeLoad(iframeId, resultId) {
+  var iframe = document.getElementById(iframeId);
+  var result = document.getElementById(resultId);
+  try {
+    // 同一オリジンでないのでcontentDocumentへのアクセスはCORSエラーになるが
+    // それはiframeが読み込まれた証拠
+    var doc = iframe.contentDocument || iframe.contentWindow.document;
+    // ここに到達できれば同一オリジン（あり得ない）
+    result.className = 'result ok';
+    result.textContent = '✅ iframeが読み込まれました（同一オリジン）';
+  } catch(e) {
+    // CORSエラー = iframeは読み込まれたが別オリジン → 正常
+    result.className = 'result ok';
+    result.textContent = '✅ iframeが正常に読み込まれました（クロスオリジン・正常）';
+  }
+}
+
+function onIframeError(iframeId, resultId) {
+  var result = document.getElementById(resultId);
+  result.className = 'result ng';
+  result.textContent = '❌ iframeの読み込みに失敗しました';
+}
+
+// ===== テスト2: スケール =====
+function applyScale() {
+  var container = document.getElementById('test2-container');
+  var iframe    = document.getElementById('iframe2');
+  var result    = document.getElementById('test2-result');
+  var info      = document.getElementById('test2-info');
+
+  var containerW = container.offsetWidth;
+  var iframeW = 312;
+  var iframeH = 176;
+  var scale = containerW / iframeW;
+
+  iframe.style.transform = 'scale(' + scale + ')';
+  container.style.height = (iframeH * scale) + 'px';
+
+  result.className = 'result ok';
+  result.textContent = '✅ スケール適用済み';
+  info.textContent = 'コンテナ幅: ' + containerW + 'px / scale: ' + scale.toFixed(4)
+    + ' / 表示高さ: ' + (iframeH * scale).toFixed(1) + 'px';
+}
+window.addEventListener('load', applyScale);
+window.addEventListener('resize', applyScale);
+
+// ===== テスト4: 環境情報 =====
+window.addEventListener('load', function() {
+  var el = document.getElementById('env-info');
+  var lines = [
+    'ブラウザ: ' + navigator.userAgent,
+    '画面幅: ' + window.screen.width + 'px',
+    'ウィンドウ幅: ' + window.innerWidth + 'px',
+    'GitHub Pages URL: ' + location.href,
+  ];
+  el.innerHTML = lines.map(function(l){
+    return '<div class="result info">' + l + '</div>';
+  }).join('');
+});
+
+// ===== ヘッダー確認（fetchで試行）=====
+function checkHeaders() {
+  var pre = document.getElementById('header-result');
+  pre.style.display = 'block';
+  pre.textContent = 'fetchを試行中...（CORSエラーになるのが正常）';
+
+  fetch('https://ext.nicovideo.jp/thumb/sm15630734', {mode: 'no-cors'})
+    .then(function(res) {
+      pre.textContent = 'no-corsで到達。type=' + res.type + '\n'
+        + '（no-corsモードではヘッダーは読めません。コンソールのNetworkタブで確認してください）';
+    })
+    .catch(function(e) {
+      pre.textContent = 'fetchエラー: ' + e.message + '\n'
+        + '→ これがiframeブロックの原因の可能性があります。\n'
+        + '　 F12 → Networkタブ → "thumb/sm" を検索して\n'
+        + '　 Response Headersの X-Frame-Options または\n'
+        + '　 Content-Security-Policy (frame-ancestors) を確認してください。';
+    });
+}
+
+// ===== CSPブロック診断 =====
+function checkConsoleErrors() {
+  var result = document.getElementById('test5-result');
+  // SecurityPolicy違反はJSからは検知できないので案内のみ
+  result.className = 'result info';
+  result.innerHTML = '🔎 F12キーでDevToolsを開き、<strong>Consoleタブ</strong>に赤いエラーが出ていれば'
+    + ' X-Frame-Options または CSP によるブロックです。<br>'
+    + '<strong>Networkタブ</strong>で ext.nicovideo.jp への通信を選択し、'
+    + 'Response Headersを確認してください。';
+}
+</script>
+</body>
+</html>
