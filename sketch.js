@@ -212,28 +212,17 @@ function vocaloidbirthday(m, d) {
       var card = document.createElement('div');
       card.className = 'song-card';
 
-      // ★修正：iframeの代わりにサムネイル画像＋リンクを使用
-      // ext.nicovideo.jp のiframeはPCのChrome/FirefoxでX-Frame-Optionsによりブロックされる
-      // ニコニコのサムネイルURLは https://nicovideo.cdn.nimg.jp/thumbnails/{数字}/{数字} だが
-      // 動画IDから直接取れる公式URLは存在しないため、
-      // i.nicovideo.jp/nicovideo/thumb/{smId} を使用する
-      var thumbUrl = 'https://nicovideo.cdn.nimg.jp/thumbnails/' +
-        smIdToNum(song.smId) + '/' + smIdToNum(song.smId);
+      // ext.nicovideo.jp/thumb/{smId} は外部サイトへの埋め込みを目的とした
+      // ニコニコ公式の「張り付け用iframe」エンドポイント。
+      // 動画IDに関わらず（旧ID・新ID問わず）正しいサムネイルを表示できる。
       var watchUrl = 'https://www.nicovideo.jp/watch/' + escapeHtml(song.smId);
 
       card.innerHTML =
-        '<a class="card-thumb-link" href="' + watchUrl + '" target="_blank" rel="noopener"' +
-        ' aria-label="' + escapeHtml(song.title) + ' をニコニコで見る">' +
-          '<div class="card-embed">' +
-            '<img' +
-            ' src="https://nicovideo.cdn.nimg.jp/thumbnails/' + escapeHtml(smIdToNum(song.smId)) + '/' + escapeHtml(smIdToNum(song.smId)) + '"' +
-            ' alt="' + escapeHtml(song.title) + '"' +
-            ' loading="lazy"' +
-            ' onerror="this.onerror=null;this.src=\'https://nicovideo.cdn.nimg.jp/thumbnails/' + escapeHtml(smIdToNum(song.smId)) + '/' + escapeHtml(smIdToNum(song.smId)) + '.M\'"' +
-            '>' +
-            '<div class="card-play-icon" aria-hidden="true">▶</div>' +
-          '</div>' +
-        '</a>' +
+        '<div class="card-embed">' +
+          '<iframe src="https://ext.nicovideo.jp/thumb/' + escapeHtml(song.smId) + '"' +
+          ' scrolling="no" frameborder="0" loading="lazy"' +
+          ' title="' + escapeHtml(song.title) + '"></iframe>' +
+        '</div>' +
         '<div class="card-info">' +
           '<p class="card-title">' + escapeHtml(song.title) + '</p>' +
           '<a class="card-link" href="' + watchUrl + '"' +
@@ -245,11 +234,6 @@ function vocaloidbirthday(m, d) {
     section.appendChild(grid);
     songListEl.appendChild(section);
   }
-}
-
-// ========== smId（"sm12345"）から数字部分を取り出す ==========
-function smIdToNum(smId) {
-  return String(smId).replace(/^[a-z]+/i, '');
 }
 
 // ========== XSS対策 ==========
