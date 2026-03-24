@@ -324,17 +324,17 @@ select:focus {
   width: 100%;
   background: #000;
   position: relative;
-  padding-top: 56.41%; /* 176/312 ≈ 56.41% — ext.nicovideo.jp/thumb の縦横比 */
   overflow: hidden;
+  /* 高さはJavaScriptで IFRAME_H * scale として動的に設定 */
 }
 
 .card-embed iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  display: block;
+  width: 312px;   /* ext.nicovideo.jp/thumb の固定コンテンツ幅 */
+  height: 176px;  /* ext.nicovideo.jp/thumb の固定コンテンツ高さ */
   border: none;
+  transform-origin: top left;
+  transform: scale(var(--thumb-scale, 1));
 }
 
 .card-info {

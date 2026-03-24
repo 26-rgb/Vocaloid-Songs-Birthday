@@ -10,25 +10,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // ハンバーガーメニュー
   var hamburger = document.getElementById('hamburger');
   var nav = document.getElementById('nav');
-
-  hamburger.addEventListener('click', function(e) {
-    e.stopPropagation(); // ★修正：クリックがdocumentに伝播してすぐ閉じるのを防ぐ
+  hamburger.addEventListener('click', function() {
     nav.classList.toggle('active');
   });
   hamburger.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.stopPropagation();
-      nav.classList.toggle('active');
+    if (e.key === 'Enter' || e.key === ' ') nav.classList.toggle('active');
+  });
+  document.addEventListener('click', function(e) {
+    if (!hamburger.contains(e.target) && !nav.contains(e.target)) {
+      nav.classList.remove('active');
     }
-  });
-
-  // ★修正：navの内側クリックでも伝播を止める（リンクをクリックしても即閉じない）
-  nav.addEventListener('click', function(e) {
-    e.stopPropagation();
-  });
-
-  document.addEventListener('click', function() {
-    nav.classList.remove('active');
   });
 
   // 今日の日付をセット
@@ -211,12 +202,6 @@ function vocaloidbirthday(m, d) {
       var song = group[n];
       var card = document.createElement('div');
       card.className = 'song-card';
-
-      // ext.nicovideo.jp/thumb/{smId} は外部サイトへの埋め込みを目的とした
-      // ニコニコ公式の「張り付け用iframe」エンドポイント。
-      // 動画IDに関わらず（旧ID・新ID問わず）正しいサムネイルを表示できる。
-      var watchUrl = 'https://www.nicovideo.jp/watch/' + escapeHtml(song.smId);
-
       card.innerHTML =
         '<div class="card-embed">' +
           '<iframe src="https://ext.nicovideo.jp/thumb/' + escapeHtml(song.smId) + '"' +
@@ -225,7 +210,7 @@ function vocaloidbirthday(m, d) {
         '</div>' +
         '<div class="card-info">' +
           '<p class="card-title">' + escapeHtml(song.title) + '</p>' +
-          '<a class="card-link" href="' + watchUrl + '"' +
+          '<a class="card-link" href="https://www.nicovideo.jp/watch/' + escapeHtml(song.smId) + '"' +
           ' target="_blank" rel="noopener">ニコニコで見る →</a>' +
         '</div>';
       grid.appendChild(card);
@@ -234,7 +219,32 @@ function vocaloidbirthday(m, d) {
     section.appendChild(grid);
     songListEl.appendChild(section);
   }
+
+  // 全カードをDOMに追加した後にスケール計算
+  scaleThumbIframes();
 }
+
+// ========== iframeをコンテナ幅に合わせてスケーリング ==========
+// ext.nicovideo.jp/thumb/ のiframeは固定サイズ（312×176px）で描画されるため、
+// そのままではPCの広いカードで中身が潰れる。
+// コンテナ幅に対するscale値をCSSカスタムプロパティで動的に設定することで
+// PCでもスマホでも正しく表示されるようにする。
+
+var IFRAME_W = 312;
+var IFRAME_H = 176;
+
+function scaleThumbIframes() {
+  var embeds = document.querySelectorAll('.card-embed');
+  for (var i = 0; i < embeds.length; i++) {
+    var el = embeds[i];
+    var scale = el.offsetWidth / IFRAME_W;
+    el.style.setProperty('--thumb-scale', scale);
+    el.style.height = (IFRAME_H * scale) + 'px';
+  }
+}
+
+// リサイズ時も再計算
+window.addEventListener('resize', scaleThumbIframes);
 
 // ========== XSS対策 ==========
 function escapeHtml(str) {
