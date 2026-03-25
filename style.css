@@ -310,9 +310,10 @@ select:focus {
   overflow: hidden;
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
-  transition: box-shadow 0.25s, transform 0.25s;
+  transition: box-shadow 0.25s, transform 0.25s, opacity 0.25s;
   display: flex;
   flex-direction: column;
+  position: relative; /* watched-badge の絶対配置基準 */
 }
 
 .song-card:hover {
@@ -324,17 +325,17 @@ select:focus {
   width: 100%;
   background: #000;
   position: relative;
+  padding-top: 56.25%; /* 16:9 */
   overflow: hidden;
-  /* 高さはJavaScriptで IFRAME_H * scale として動的に設定 */
 }
 
 .card-embed iframe {
-  display: block;
-  width: 312px;   /* ext.nicovideo.jp/thumb の固定コンテンツ幅 */
-  height: 176px;  /* ext.nicovideo.jp/thumb の固定コンテンツ高さ */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   border: none;
-  transform-origin: top left;
-  transform: scale(var(--thumb-scale, 1));
 }
 
 .card-info {
@@ -369,6 +370,42 @@ select:focus {
 .card-link:hover {
   color: var(--teal);
   text-decoration: underline;
+}
+
+/* ==========================================
+   視聴済みバッジ
+   ========================================== */
+
+/* バッジ本体：通常は非表示 */
+.watched-badge {
+  display: none;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
+  border-radius: 20px;
+  pointer-events: none;
+  backdrop-filter: blur(2px);
+  border: 1px solid rgba(255,255,255,0.25);
+  z-index: 2;
+}
+
+/* .is-watched が付いたカードでバッジを表示 */
+.song-card.is-watched .watched-badge {
+  display: block;
+}
+
+/* カード枠を薄くして「見た感」を出す */
+.song-card.is-watched {
+  opacity: 0.6;
+}
+.song-card.is-watched:hover {
+  opacity: 1; /* ホバーで元に戻して確認しやすく */
 }
 
 /* ==========================================
