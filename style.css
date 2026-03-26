@@ -310,7 +310,7 @@ select:focus {
   overflow: hidden;
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
-  transition: box-shadow 0.25s, transform 0.25s, opacity 0.25s;
+  transition: box-shadow 0.25s, transform 0.25s, opacity 0.2s;
   display: flex;
   flex-direction: column;
   position: relative; /* watched-badge の絶対配置基準 */
@@ -373,39 +373,82 @@ select:focus {
 }
 
 /* ==========================================
-   視聴済みバッジ
+   視聴済みバッジ（葱マーク・右下）
    ========================================== */
 
-/* バッジ本体：通常は非表示 */
 .watched-badge {
   display: none;
   position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(0, 0, 0, 0.62);
+  bottom: 52px;
+  right: 10px;
+  background: #1a7a3a;
   color: #fff;
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 3px 9px;
+  letter-spacing: 0.05em;
+  padding: 3px 10px 3px 6px;
   border-radius: 20px;
   pointer-events: none;
-  backdrop-filter: blur(2px);
-  border: 1px solid rgba(255,255,255,0.25);
   z-index: 2;
+  white-space: nowrap;
+  align-items: center;
+  gap: 4px;
 }
 
-/* .is-watched が付いたカードでバッジを表示 */
+.watched-badge-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+
 .song-card.is-watched .watched-badge {
+  display: flex;
+}
+
+.song-card.is-watched {
+  opacity: 0.62;
+}
+
+.song-card.is-watched:hover {
+  opacity: 1;
+}
+
+/* ==========================================
+   ネギカウンター（ヘッダー内）
+   ========================================== */
+
+.negi-counter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #1a7a3a;
+  color: #fff;
+  border-radius: 20px;
+  padding: 4px 12px 4px 6px;
+  flex-shrink: 0;
+}
+
+.negi-counter-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
   display: block;
 }
 
-/* カード枠を薄くして「見た感」を出す */
-.song-card.is-watched {
-  opacity: 0.6;
+.negi-counter-x {
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: 0.85;
 }
-.song-card.is-watched:hover {
-  opacity: 1; /* ホバーで元に戻して確認しやすく */
+
+.negi-counter-num {
+  font-size: 0.95rem;
+  font-weight: 700;
+  min-width: 1.5em;
+  text-align: left;
+  font-family: var(--font-main);
 }
 
 /* ==========================================

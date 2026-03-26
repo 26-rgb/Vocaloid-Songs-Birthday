@@ -17,6 +17,16 @@ function getWatched() {
   }
 }
 
+// ========== ネギカウンター表示を更新 ==========
+function updateNegiCounter() {
+  var count = getWatched().size;
+  var counter = document.getElementById('negi-counter');
+  var numEl   = document.getElementById('negi-count');
+  if (!counter || !numEl) return;
+  numEl.textContent = count;
+  counter.style.display = count > 0 ? 'flex' : 'none';
+}
+
 // smId を視聴済みとして記録し、対応カードにバッジを即反映
 function markWatched(smId) {
   try {
@@ -29,6 +39,9 @@ function markWatched(smId) {
   // DOM上の対応カードにバッジを付ける
   var card = document.querySelector('.song-card[data-smid="' + smId + '"]');
   if (card) card.classList.add('is-watched');
+
+  // ネギカウンターをリアルタイム更新
+  updateNegiCounter();
 }
 
 // ========== 初期化 ==========
@@ -68,6 +81,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // CSVを読み込む
   loadCSV('vocaloid_data.csv');
+
+  // ページ表示時点の視聴済み数をカウンターに反映
+  updateNegiCounter();
 });
 
 // ========== CSV読み込み ==========
@@ -245,7 +261,10 @@ function vocaloidbirthday(m, d) {
           '<a class="card-link" href="https://www.nicovideo.jp/watch/' + escapeHtml(song.smId) + '"' +
           ' target="_blank" rel="noopener">ニコニコで見る →</a>' +
         '</div>' +
-        '<div class="watched-badge" aria-label="視聴済み">視聴済み</div>';
+        '<div class="watched-badge" aria-label="視聴済み">' +
+          '<img src="negi.png" alt="" class="watched-badge-img">' +
+          '視聴済み' +
+        '</div>';
 
       // 「ニコニコで見る」リンクをクリック → 視聴済み記録
       card.querySelector('.card-link').addEventListener('click', (function(id) {
