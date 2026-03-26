@@ -3,5 +3,5 @@
 Git-hub Pages　→　[https://26-rgb.github.io/Vocaloid-Songs-Birthday/](https://26-rgb.github.io/Vocaloid-Songs-Birthday/)
 
 クレジット<br>
-negi.png  :  私
+negi.png  :  私<br>
 claude.aiを使用
