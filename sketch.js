@@ -254,7 +254,9 @@ function vocaloidbirthday(m, d) {
         '<div class="card-embed">' +
           '<iframe src="https://ext.nicovideo.jp/thumb/' + escapeHtml(song.smId) + '"' +
           ' scrolling="no" frameborder="0" loading="lazy"' +
-          ' title="' + escapeHtml(song.title) + '"></iframe>' +
+          ' title="' + escapeHtml(song.title) + '"' +
+          ' onload="this.classList.add(\'loaded\')">' +
+          '</iframe>' +
         '</div>' +
         '<div class="card-info">' +
           '<p class="card-title">' + escapeHtml(song.title) + '</p>' +
