@@ -258,12 +258,14 @@ function vocaloidbirthday(m, d) {
         '</div>' +
         '<div class="card-info">' +
           '<p class="card-title">' + escapeHtml(song.title) + '</p>' +
-          '<a class="card-link" href="https://www.nicovideo.jp/watch/' + escapeHtml(song.smId) + '"' +
-          ' target="_blank" rel="noopener">ニコニコで見る →</a>' +
-        '</div>' +
-        '<div class="watched-badge" aria-label="視聴済み">' +
-          '<img src="negi.png" alt="" class="watched-badge-img">' +
-          '視聴済み' +
+          '<div class="card-bottom">' +
+            '<a class="card-link" href="https://www.nicovideo.jp/watch/' + escapeHtml(song.smId) + '"' +
+            ' target="_blank" rel="noopener">ニコニコで見る →</a>' +
+            '<div class="watched-badge" aria-label="視聴済み">' +
+              '<img src="negi.png" alt="" class="watched-badge-img">' +
+              '視聴済み' +
+            '</div>' +
+          '</div>' +
         '</div>';
 
       // 「ニコニコで見る」リンクをクリック → 視聴済み記録
